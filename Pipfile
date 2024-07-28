@@ -6,6 +6,8 @@ name = "pypi"
 [packages]
 pyrtlsdr = "*"
 matplotlib = "*"
+pyqt6 = "*"
+scipy = "*"
 
 [dev-packages]
 
