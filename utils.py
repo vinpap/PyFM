@@ -25,7 +25,7 @@ def plot_radio_input(center_frequency: float, sample_rate: float=250e3):
         Reads the incoming signal and plot it real-time
         """
         graph_out.clear()
-        samples = sdr.read_samples(512*1024)
+        samples = sdr.read_samples(512*2048)
 
         # use matplotlib to estimate and plot the PSD
         graph_out.psd(samples, NFFT=1024, Fs=sdr.sample_rate /

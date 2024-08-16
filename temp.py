@@ -1,3 +1,10 @@
+"""
+TEMPORARY CODE, MEANT TO BE REMOVED.
+"""
+
+
+
+
 import numpy as np
 import scipy
 from scipy.signal import resample_poly, firwin, bilinear, lfilter
@@ -6,7 +13,7 @@ from matplotlib.pyplot import *
 from matplotlib import animation
 from rtlsdr import RtlSdr
 
-from radio_processing import fm_to_wav
+from radio_processing import fm_to_wav, listen_fm_live, listen
 from utils import plot_radio_input, plot_spectrogram
 
 
@@ -377,19 +384,14 @@ def listen_fm():
             #print("unsupported group_type:", group_type)
 
 if __name__ == "__main__":
-    """sdr = RtlSdr()
-    sdr.sample_rate = 250e3 # Hz
-    sdr.center_freq = 99.5e6   # Hz
-    sdr.freq_correction = 60  # PPM
-    sdr.bandwidth = 50000
-    sdr.gain = 'auto'
-    listen_fm()
+
 
     input_filepath = "./samples.iq"
     output_filepath = "./output.wav"
-    fm_to_wav(input_filepath, output_filepath)"""
+    #listen_fm_live(90.9e6)
+    listen(102.5e6)
 
-    plot_radio_input(center_frequency=90.8e6)
+    #plot_radio_input(center_frequency=90.8e6)
     #plot_spectrogram(center_frequency=90.8e6)
 
     
