@@ -1,10 +1,13 @@
-import asyncio
-
 import numpy as np
 import scipy
+from scipy.signal import resample_poly, firwin, bilinear, lfilter
+from scipy.io import wavfile
 from matplotlib.pyplot import *
 from matplotlib import animation
 from rtlsdr import RtlSdr
+
+from radio_processing import fm_to_wav
+from utils import plot_radio_input, plot_spectrogram
 
 
 
@@ -44,6 +47,31 @@ def listen_fm():
     """
 
     x = np.fromfile('./samples.iq', dtype=np.complex64)
+    sample_rate = 250e3
+    center_freq = 99.5e6
+
+    
+
+    # Demodulation
+    x = np.diff(np.unwrap(np.angle(x)))
+
+    # De-emphasis filter, H(s) = 1/(RC*s + 1), implemented as IIR via bilinear transform
+    bz, az = bilinear(1, [75e-6, 1], fs=sample_rate)
+    x = lfilter(bz, az, x)
+
+    # decimate by 6 to get mono audio
+    x = x[::6]
+    sample_rate_audio = sample_rate/6
+
+    # normalize volume so its between -1 and +1
+    x /= np.max(np.abs(x))
+
+    # some machines want int16s
+    x *= 32767
+    x = x.astype(np.int16)
+
+    # Save to wav file, you can open this in Audacity for example
+    wavfile.write('fm.wav', int(sample_rate_audio), x)
     # Quadrature Demod
     x = 0.5 * np.angle(x[0:-1] * np.conj(x[1:])) # see https://wiki.gnuradio.org/index.php/Quadrature_Demod
     # Freq shift
@@ -148,7 +176,6 @@ def listen_fm():
     reg = np.uint32(0) # was unsigned long in C++ (64 bits) but numpy doesn't support bitwise ops of uint64, I don't think it gets that high anyway
     lastseen_offset_counter = 0
     lastseen_offset = 0
-
     # the synchronization process is described in Annex C, page 66 of the standard */
     bytes_out = []
     for i in range(len(bits)):
@@ -241,14 +268,129 @@ def listen_fm():
                     blocks_counter = 0
                     wrong_blocks_counter = 0
 
+    ###########
+    # PARSER  #
+    ###########
+
+    # Annex F of RBDS Standard Table F.1 (North America) and Table F.2 (Europe)
+    #              Europe                   North America
+    pty_table = [["Undefined",             "Undefined"],
+                ["News",                  "News"],
+                ["Current Affairs",       "Information"],
+                ["Information",           "Sports"],
+                ["Sport",                 "Talk"],
+                ["Education",             "Rock"],
+                ["Drama",                 "Classic Rock"],
+                ["Culture",               "Adult Hits"],
+                ["Science",               "Soft Rock"],
+                ["Varied",                "Top 40"],
+                ["Pop Music",             "Country"],
+                ["Rock Music",            "Oldies"],
+                ["Easy Listening",        "Soft"],
+                ["Light Classical",       "Nostalgia"],
+                ["Serious Classical",     "Jazz"],
+                ["Other Music",           "Classical"],
+                ["Weather",               "Rhythm & Blues"],
+                ["Finance",               "Soft Rhythm & Blues"],
+                ["Children’s Programmes", "Language"],
+                ["Social Affairs",        "Religious Music"],
+                ["Religion",              "Religious Talk"],
+                ["Phone-In",              "Personality"],
+                ["Travel",                "Public"],
+                ["Leisure",               "College"],
+                ["Jazz Music",            "Spanish Talk"],
+                ["Country Music",         "Spanish Music"],
+                ["National Music",        "Hip Hop"],
+                ["Oldies Music",          "Unassigned"],
+                ["Folk Music",            "Unassigned"],
+                ["Documentary",           "Weather"],
+                ["Alarm Test",            "Emergency Test"],
+                ["Alarm",                 "Emergency"]]
+    pty_locale = 0 # set to 0 for Europe which will use first column instead
+
+    # page 72, Annex D, table D.2 in the standard
+    coverage_area_codes = ["Local",
+                        "International",
+                        "National",
+                        "Supra-regional",
+                        "Regional 1",
+                        "Regional 2",
+                        "Regional 3",
+                        "Regional 4",
+                        "Regional 5",
+                        "Regional 6",
+                        "Regional 7",
+                        "Regional 8",
+                        "Regional 9",
+                        "Regional 10",
+                        "Regional 11",
+                        "Regional 12"]
+
+    radiotext_AB_flag = 0
+    radiotext = [' ']*65
+    first_time = True
+    for bytes in bytes_out:
+        group_0 = bytes[1] | (bytes[0] << 8)
+        group_1 = bytes[3] | (bytes[2] << 8)
+        group_2 = bytes[5] | (bytes[4] << 8)
+        group_3 = bytes[7] | (bytes[6] << 8)
+
+        group_type = (group_1 >> 12) & 0xf # here is what each one means, e.g. RT is radiotext which is the only one we decode here: ["BASIC", "PIN/SL", "RT", "AID", "CT", "TDC", "IH", "RP", "TMC", "EWS", "___", "___", "___", "___", "EON", "___"]
+        AB = (group_1 >> 11 ) & 0x1 # b if 1, a if 0
+
+        #print("group_type:", group_type) # this is essentially message type, i only see type 0 and 2 in my recording
+        #print("AB:", AB)
+
+        program_identification = group_0     # "PI"
+
+        program_type = (group_1 >> 5) & 0x1f # "PTY"
+        pty = pty_table[program_type][pty_locale]
+
+        pi_area_coverage = (program_identification >> 8) & 0xf
+        coverage_area = coverage_area_codes[pi_area_coverage]
+
+        pi_program_reference_number = program_identification & 0xff # just an int
+
+        if first_time:
+            print("PTY:", pty)
+            print("program:", pi_program_reference_number)
+            print("coverage_area:", coverage_area)
+            first_time = False
+
+        if group_type == 2:
+            # when the A/B flag is toggled, flush your current radiotext
+            if radiotext_AB_flag != ((group_1 >> 4) & 0x01):
+                radiotext = [' ']*65
+            radiotext_AB_flag = (group_1 >> 4) & 0x01
+            text_segment_address_code = group_1 & 0x0f
+            if AB:
+                radiotext[text_segment_address_code * 2    ] = chr((group_3 >> 8) & 0xff)
+                radiotext[text_segment_address_code * 2 + 1] = chr(group_3        & 0xff)
+            else:
+                radiotext[text_segment_address_code *4     ] = chr((group_2 >> 8) & 0xff)
+                radiotext[text_segment_address_code * 4 + 1] = chr(group_2        & 0xff)
+                radiotext[text_segment_address_code * 4 + 2] = chr((group_3 >> 8) & 0xff)
+                radiotext[text_segment_address_code * 4 + 3] = chr(group_3        & 0xff)
+            print(''.join(radiotext))
+        else:
+            pass
+            #print("unsupported group_type:", group_type)
+
 if __name__ == "__main__":
-    sdr = RtlSdr()
-    sdr.sample_rate = 2.048e6 # Hz
-    sdr.center_freq = 95.5e6   # Hz
+    """sdr = RtlSdr()
+    sdr.sample_rate = 250e3 # Hz
+    sdr.center_freq = 99.5e6   # Hz
     sdr.freq_correction = 60  # PPM
     sdr.bandwidth = 50000
     sdr.gain = 'auto'
     listen_fm()
+
+    input_filepath = "./samples.iq"
+    output_filepath = "./output.wav"
+    fm_to_wav(input_filepath, output_filepath)"""
+
+    plot_radio_input(center_frequency=90.8e6)
+    #plot_spectrogram(center_frequency=90.8e6)
 
     
 
