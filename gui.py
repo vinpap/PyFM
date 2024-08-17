@@ -28,6 +28,8 @@ def main_loop():
     text="Set frequency",
     )
     ok_btn.pack()
+
+    window.protocol("WM_DELETE_WINDOW", lambda arg=window: on_closing(arg))
     window.mainloop()
 
 def change_frequency(new_frequency: float):
@@ -35,3 +37,13 @@ def change_frequency(new_frequency: float):
     Called upon clicking the button to change the FM frequency to listen to.
     """
     ...
+
+def on_closing(window):
+    """
+    Called upon closing the main window.
+    """
+    # ICI, MODIFIER UNE VALEUR PARTAGÉE POUR QUE LA RADIO SACHE QU'IL FAUT 
+    # QUITTER
+    window.destroy()
+
+    
