@@ -4,10 +4,13 @@ Contains all the GUI-related functions.
 import threading
 import tkinter as tk
 
+from utils import Mfloat
+
 class GUI:
 
-    def __init__(self, quit_event: threading.Event):
+    def __init__(self, quit_event: threading.Event, frequency: Mfloat):
         self.quit_event = quit_event
+        self.frequency = frequency
 
     def setup_gui(self):
         """
@@ -26,8 +29,11 @@ class GUI:
         frame = tk.Frame(window)
         frame.pack()
 
-        freq_selector = tk.Spinbox(from_=80, to=108, increment=0.01)
+        self.spinner_value = tk.StringVar(window)
+        self.spinner_value.set(self.frequency.str_value)
+        freq_selector = tk.Spinbox(from_=80, to=108, increment=0.01, textvariable=self.spinner_value)
         freq_selector.pack()
+        self.spinner_value.trace_add('write', self.on_frequency_update)
 
         ok_btn = tk.Button(
         text="Set frequency",
@@ -37,11 +43,12 @@ class GUI:
         window.protocol("WM_DELETE_WINDOW", lambda arg=window: self.on_closing(arg))
         window.mainloop()
 
-    def change_frequency(self, new_frequency: float):
+
+    def on_frequency_update(self, a, b, c):
         """
-        Called upon clicking the button to change the FM frequency to listen to.
+        Called when the user updates the frequency value in the spinner widget.
         """
-        ...
+        self.frequency.value = float(self.spinner_value.get())*1000000
 
     def on_closing(self, window):
         """

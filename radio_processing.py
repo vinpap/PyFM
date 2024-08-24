@@ -12,6 +12,8 @@ from rtlsdr import RtlSdr
 from scipy.io import wavfile
 from scipy.signal import bilinear, lfilter
 
+from utils import Mfloat
+
 
 def fm_to_wav(input_filepath: str, ouptut_filepath: str, sample_rate: float = 250e3):
     """
@@ -50,13 +52,13 @@ def fm_to_wav(input_filepath: str, ouptut_filepath: str, sample_rate: float = 25
     wavfile.write("fm.wav", int(sample_rate_audio), x)
 
 
-async def streaming(center_frequency: float, quit_event: threading.Event, sample_rate: float = 250e3, ):
+async def streaming(center_frequency: Mfloat, quit_event: threading.Event, sample_rate: float = 250e3, ):
     """
     Reads the FM datastream coming from the RTL, demodulates it and plays it.
     """
     sdr = RtlSdr()
     sdr.sample_rate = sample_rate  # Hz
-    sdr.center_freq = center_frequency  # Hz
+    sdr.center_freq = center_frequency.value  # Hz
     sdr.freq_correction = 60  # PPM
     sdr.bandwidth = 50000
     sdr.gain = "auto"
@@ -67,11 +69,14 @@ async def streaming(center_frequency: float, quit_event: threading.Event, sample
     )
     audio_output.start()
 
-    # TODO: enable "clean" exit from the loop below
     async for samples in sdr.stream(num_samples_or_bytes=128 * 4096):
 
         if quit_event.is_set():
             break
+
+        if center_frequency.value != sdr.center_freq:
+            sdr.center_freq = center_frequency.value
+
         # Demodulation
         x = samples
         x = np.diff(np.unwrap(np.angle(x)))
@@ -100,7 +105,7 @@ async def streaming(center_frequency: float, quit_event: threading.Event, sample
     sdr.close()
 
 
-def listen_fm_live(center_frequency: float, quit_event: threading.Event, sample_rate: float=250e3):
+def listen_fm_live(center_frequency: Mfloat, quit_event: threading.Event, sample_rate: float=250e3):
     """
     Plays the FM audio data received at center_frequency (in Hz).
     """
