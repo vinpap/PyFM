@@ -4,6 +4,7 @@ convert it into sound data.
 """
 
 import asyncio
+import threading
 
 import numpy as np
 import sounddevice as sd
@@ -49,7 +50,7 @@ def fm_to_wav(input_filepath: str, ouptut_filepath: str, sample_rate: float = 25
     wavfile.write("fm.wav", int(sample_rate_audio), x)
 
 
-async def streaming(center_frequency: float, sample_rate: float = 250e3):
+async def streaming(center_frequency: float, quit_event: threading.Event, sample_rate: float = 250e3, ):
     """
     Reads the FM datastream coming from the RTL, demodulates it and plays it.
     """
@@ -68,6 +69,9 @@ async def streaming(center_frequency: float, sample_rate: float = 250e3):
 
     # TODO: enable "clean" exit from the loop below
     async for samples in sdr.stream(num_samples_or_bytes=128 * 4096):
+
+        if quit_event.is_set():
+            break
         # Demodulation
         x = samples
         x = np.diff(np.unwrap(np.angle(x)))
@@ -96,9 +100,9 @@ async def streaming(center_frequency: float, sample_rate: float = 250e3):
     sdr.close()
 
 
-def listen_fm_live(center_frequency: float, sample_rate: float = 250e3):
+def listen_fm_live(center_frequency: float, quit_event: threading.Event, sample_rate: float=250e3):
     """
     Plays the FM audio data received at center_frequency (in Hz).
     """
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(streaming(center_frequency, sample_rate))
+    loop.run_until_complete(streaming(center_frequency, quit_event, sample_rate))

@@ -1,49 +1,53 @@
 """
 Contains all the GUI-related functions.
 """
+import threading
 import tkinter as tk
 
+class GUI:
 
-def setup_gui():
-    """
-    Sets up the main window and all the necessay widgets.
-    """
-    ...
-    
+    def __init__(self, quit_event: threading.Event):
+        self.quit_event = quit_event
 
-def main_loop():
-    """
-    Runs the main execution loop
-    """
-    window = tk.Tk()
-    window.geometry("300x200")
-    window.title("PyFM")
-    frame = tk.Frame(window)
-    frame.pack()
+    def setup_gui(self):
+        """
+        Sets up the main window and all the necessay widgets.
+        """
+        ...
+        
 
-    freq_selector = tk.Spinbox(from_=88, to=108, increment=0.01)
-    freq_selector.pack()
+    def gui_loop(self):
+        """
+        Runs the main GUI execution loop
+        """
+        window = tk.Tk()
+        window.geometry("300x200")
+        window.title("PyFM")
+        frame = tk.Frame(window)
+        frame.pack()
 
-    ok_btn = tk.Button(
-    text="Set frequency",
-    )
-    ok_btn.pack()
+        freq_selector = tk.Spinbox(from_=80, to=108, increment=0.01)
+        freq_selector.pack()
 
-    window.protocol("WM_DELETE_WINDOW", lambda arg=window: on_closing(arg))
-    window.mainloop()
+        ok_btn = tk.Button(
+        text="Set frequency",
+        )
+        ok_btn.pack()
 
-def change_frequency(new_frequency: float):
-    """
-    Called upon clicking the button to change the FM frequency to listen to.
-    """
-    ...
+        window.protocol("WM_DELETE_WINDOW", lambda arg=window: self.on_closing(arg))
+        window.mainloop()
 
-def on_closing(window):
-    """
-    Called upon closing the main window.
-    """
-    # ICI, MODIFIER UNE VALEUR PARTAGÉE POUR QUE LA RADIO SACHE QU'IL FAUT 
-    # QUITTER
-    window.destroy()
+    def change_frequency(self, new_frequency: float):
+        """
+        Called upon clicking the button to change the FM frequency to listen to.
+        """
+        ...
+
+    def on_closing(self, window):
+        """
+        Called upon closing the main window.
+        """
+        self.quit_event.set()
+        window.destroy()
 
     
