@@ -1,5 +1,7 @@
 """
-Miscallenous utility classes and functions.
+Miscallenous utility classes and functions. Not all of them are used when the 
+software is running, some are just visualization functions that are used during 
+the development process.
 """
 
 import numpy as np
@@ -12,7 +14,7 @@ class Mfloat:
     """
     This class only stores a float: its instances are meant to be passed
     to functions so they can be used as mutable floats (floats are immutable
-    in Python).
+    in Python). Also contains a string representation of this value in MHz.
     """
     def __init__(self, value: float):
         self.__value = value
@@ -26,7 +28,6 @@ class Mfloat:
     def value(self, new_value: float):
         self.__value = new_value
         self.str_value = str(new_value/1000000)
-
 
 
 

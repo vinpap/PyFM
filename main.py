@@ -1,3 +1,6 @@
+"""
+Run this script to open the radio.
+"""
 import threading
 
 from gui import GUI
@@ -6,14 +9,11 @@ from utils import Mfloat
 
 
 if __name__ == "__main__":
-    
-    # TODO: Lancer listen_fm_live dans un thread différent
-    # Partager les infos suivantes avec le thread principal :
-    # - booléen qui indique s'il faut quitter ou non
-    # - fréquence radio à jouer
-
+    # FM frequency that is opened by default upon running the software
     frequency = Mfloat(87.7e6)
 
+    # Two threads are run: one for the GUI and the other for the radio reception
+    # and processing
     quit_event = threading.Event()
     gui = GUI(quit_event=quit_event, frequency=frequency)
     gui_thread = threading.Thread(target=gui.gui_loop)

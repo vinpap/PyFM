@@ -1,5 +1,8 @@
 """
-Contains all the GUI-related functions.
+Contains all the GUI-related code.
+
+The resulting GUI is very simple (or ugly, depending on your tastes). It might
+be improved in the future.
 """
 import threading
 import tkinter as tk
@@ -12,17 +15,11 @@ class GUI:
         self.quit_event = quit_event
         self.frequency = frequency
 
-    def setup_gui(self):
-        """
-        Sets up the main window and all the necessay widgets.
-        """
-        ...
-        
-
     def gui_loop(self):
         """
-        Runs the main GUI execution loop
+        Runs the main GUI execution loop.
         """
+
         window = tk.Tk()
         window.geometry("300x200")
         window.title("PyFM")
@@ -47,12 +44,15 @@ class GUI:
         """
         Called when the user updates the frequency value in the spinner widget.
         """
+        # We multiply the input value by 1M to convert from MHz (as displayed)
+        # into Hz
         self.frequency.value = float(self.spinner_value.get())*1000000
 
     def on_closing(self, window):
         """
         Called upon closing the main window.
         """
+        # Stopping the radio reception thread
         self.quit_event.set()
         window.destroy()
 
