@@ -29,16 +29,15 @@ class GUI:
         frame = tk.Frame(window)
         frame.pack()
 
+        self.info_text = tk.Label(window, text="Select the frequency you want to listen to:")
+        self.info_text.pack()
+        self.info_text.pack(pady=30)
+
         self.spinner_value = tk.StringVar(window)
         self.spinner_value.set(self.frequency.str_value)
-        freq_selector = tk.Spinbox(from_=80, to=108, increment=0.01, textvariable=self.spinner_value)
-        freq_selector.pack()
+        freq_selector = tk.Spinbox(from_=80, to=108, increment=0.01, textvariable=self.spinner_value, width=30)
+        freq_selector.pack(fill="y")
         self.spinner_value.trace_add('write', self.on_frequency_update)
-
-        ok_btn = tk.Button(
-        text="Set frequency",
-        )
-        ok_btn.pack()
 
         window.protocol("WM_DELETE_WINDOW", lambda arg=window: self.on_closing(arg))
         window.mainloop()

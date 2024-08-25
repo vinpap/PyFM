@@ -69,7 +69,7 @@ async def streaming(center_frequency: Mfloat, quit_event: threading.Event, sampl
     )
     audio_output.start()
 
-    async for samples in sdr.stream(num_samples_or_bytes=128 * 4096):
+    async for samples in sdr.stream(num_samples_or_bytes=128*1024):
 
         if quit_event.is_set():
             break
