@@ -21,4 +21,3 @@ if __name__ == "__main__":
     gui_thread.start()
     listen_fm_live(frequency, quit_event)
     gui_thread.join()
-    

@@ -52,7 +52,11 @@ def fm_to_wav(input_filepath: str, ouptut_filepath: str, sample_rate: float = 25
     wavfile.write("fm.wav", int(sample_rate_audio), x)
 
 
-async def streaming(center_frequency: Mfloat, quit_event: threading.Event, sample_rate: float = 250e3, ):
+async def streaming(
+    center_frequency: Mfloat,
+    quit_event: threading.Event,
+    sample_rate: float = 250e3,
+):
     """
     Reads the FM datastream coming from the RTL, demodulates it and plays it.
     """
@@ -69,8 +73,7 @@ async def streaming(center_frequency: Mfloat, quit_event: threading.Event, sampl
     )
     audio_output.start()
 
-    async for samples in sdr.stream(num_samples_or_bytes=128*1024):
-
+    async for samples in sdr.stream(num_samples_or_bytes=128 * 1024):
         if quit_event.is_set():
             break
 
@@ -105,7 +108,9 @@ async def streaming(center_frequency: Mfloat, quit_event: threading.Event, sampl
     sdr.close()
 
 
-def listen_fm_live(center_frequency: Mfloat, quit_event: threading.Event, sample_rate: float=250e3):
+def listen_fm_live(
+    center_frequency: Mfloat, quit_event: threading.Event, sample_rate: float = 250e3
+):
     """
     Plays the FM audio data received at center_frequency (in Hz).
     """

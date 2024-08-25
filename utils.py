@@ -10,25 +10,27 @@ import matplotlib.pyplot as plt
 from matplotlib import animation
 from matplotlib.pyplot import figure, show
 
+
 class Mfloat:
     """
     This class only stores a float: its instances are meant to be passed
     to functions so they can be used as mutable floats (floats are immutable
     in Python). Also contains a string representation of this value in MHz.
     """
+
     def __init__(self, value: float):
         self.__value = value
         # String representation in MHz
-        self.str_value = str(self.__value/1000000) 
-    
+        self.str_value = str(self.__value / 1000000)
+
     @property
     def value(self):
         return self.__value
+
     @value.setter
     def value(self, new_value: float):
         self.__value = new_value
-        self.str_value = str(new_value/1000000)
-
+        self.str_value = str(new_value / 1000000)
 
 
 def plot_radio_input(center_frequency: float, sample_rate: float = 250e3):
@@ -70,7 +72,6 @@ def plot_radio_input(center_frequency: float, sample_rate: float = 250e3):
 
 
 def plot_spectrogram(center_frequency: float, sample_rate: float = 250e3):
-
     sdr = RtlSdr()
     sdr.sample_rate = sample_rate  # Hz
     sdr.center_freq = center_frequency  # Hz
