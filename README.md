@@ -3,7 +3,7 @@
 
 PyFM is a simple FM radio player coded in Python.
 
-## Requirements:
+## Requirements
 - Linux
 - Python
 - A RTL-SDR dongle
