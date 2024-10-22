@@ -1,9 +1,6 @@
 # PyFM
 
-:construction:WORK IN PROGRESS:construction:
-
-
-PyFM is a simple FM radio player coded in Python.
+PyFM is a (very) simple FM radio player coded in Python.
 
 ## Requirements
 - Linux
